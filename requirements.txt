@@ -43,6 +43,4 @@ webencodings==0.5.1
 Werkzeug==3.0.4
 wrapt==1.16.0
 WTForms==3.1.2
-Flask
-gunicorn
-other-dependencies
+gunicorn==20.1.0
