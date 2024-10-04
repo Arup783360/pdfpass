@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Password Finder</title>
+
+    <style>
+        /* General body styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 400px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            margin: 15px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #progress-container {
+            width: 100%;
+            background-color: #ddd;
+            margin-top: 20px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 20px;
+            background-color: #28a745;
+            border-radius: 5px;
+        }
+
+        #progress-percentage {
+            margin-top: 10px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        #password-result {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #333;
+        }
+
+        #error-message {
+            color: red;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Find Your PDF Password</h1>
+        <form id="pdf-form">
+            <input type="file" id="pdf" name="pdf" accept="application/pdf"><br><br>
+            <button type="submit">Find Password</button>
+        </form>
+
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+            <span id="progress-percentage">0%</span>
+        </div>
+
+        <p id="password-result"></p>
+        <p id="error-message"></p>
+    </div>
+
+    <script>
+        document.getElementById("pdf-form").onsubmit = async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData();
+            const pdfFile = document.getElementById('pdf').files[0];
+
+            if (!pdfFile) {
+                document.getElementById('error-message').textContent = "Please upload a PDF file.";
+                return;
+            }
+
+            document.getElementById('error-message').textContent = "";
+            formData.append('pdf', pdfFile);
+
+            // Show progress bar
+            document.getElementById('progress-container').style.display = 'block';
+
+            // Initialize progress bar and simulate progress
+            const progressBar = document.getElementById('progress-bar');
+            const progressPercentage = document.getElementById('progress-percentage');
+            let progress = 0;
+            let interval = null;
+
+            // Reset progress bar to start the animation loop
+            function startProgressBar() {
+                progress = 0;
+                interval = setInterval(() => {
+                    if (progress >= 100) {
+                        progress = 0; // Reset to 0 for continuous loop
+                    } else {
+                        progress += 1;
+                    }
+                    progressBar.style.width = `${progress}%`;
+                    progressPercentage.textContent = `${progress}%`;
+                }, 50); // Update every 50ms
+            }
+
+            // Start the loading animation
+            startProgressBar();
+
+            // Send PDF file to the server
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            clearInterval(interval);
+
+            const data = await response.json();
+            if (data.password) {
+                progressBar.style.width = '100%';
+                progressPercentage.textContent = '100%';
+                document.getElementById('password-result').textContent = `PDF Password: ${data.password}`;
+            } else if (data.error) {
+                document.getElementById('error-message').textContent = data.error;
+                progressBar.style.width = '100%';
+                progressPercentage.textContent = '100%';
+            } else {
+                document.getElementById('error-message').textContent = "Please upload a password-protected PDF.";
+            }
+        };
+    </script>
+
+</body>
+</html>
